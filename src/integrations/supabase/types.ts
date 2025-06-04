@@ -9,16 +9,194 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      admin_profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          permissions: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          permissions?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          permissions?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collector_profiles: {
+        Row: {
+          business_address: string | null
+          business_coordinates: unknown | null
+          business_description: string | null
+          business_name: string | null
+          business_photo_url: string | null
+          created_at: string | null
+          current_tier: Database["public"]["Enums"]["collector_tier"] | null
+          daily_capacity: number | null
+          founding_year: number | null
+          id: string
+          is_verified: boolean | null
+          price_list: Json | null
+          specialties: string[] | null
+          tier_expires_at: string | null
+          trial_expires_at: string | null
+          trial_status: Database["public"]["Enums"]["trial_status"] | null
+          updated_at: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          business_address?: string | null
+          business_coordinates?: unknown | null
+          business_description?: string | null
+          business_name?: string | null
+          business_photo_url?: string | null
+          created_at?: string | null
+          current_tier?: Database["public"]["Enums"]["collector_tier"] | null
+          daily_capacity?: number | null
+          founding_year?: number | null
+          id: string
+          is_verified?: boolean | null
+          price_list?: Json | null
+          specialties?: string[] | null
+          tier_expires_at?: string | null
+          trial_expires_at?: string | null
+          trial_status?: Database["public"]["Enums"]["trial_status"] | null
+          updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          business_address?: string | null
+          business_coordinates?: unknown | null
+          business_description?: string | null
+          business_name?: string | null
+          business_photo_url?: string | null
+          created_at?: string | null
+          current_tier?: Database["public"]["Enums"]["collector_tier"] | null
+          daily_capacity?: number | null
+          founding_year?: number | null
+          id?: string
+          is_verified?: boolean | null
+          price_list?: Json | null
+          specialties?: string[] | null
+          tier_expires_at?: string | null
+          trial_expires_at?: string | null
+          trial_status?: Database["public"]["Enums"]["trial_status"] | null
+          updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collector_profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          job: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          job?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          job?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          email: string
+          id: string
+          is_profile_complete: boolean | null
+          name: string | null
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          social_media_links: Json | null
+          updated_at: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          email: string
+          id: string
+          is_profile_complete?: boolean | null
+          name?: string | null
+          phone?: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          social_media_links?: Json | null
+          updated_at?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          is_profile_complete?: boolean | null
+          name?: string | null
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          social_media_links?: Json | null
+          updated_at?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { user_id: string }
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
     }
     Enums: {
-      [_ in never]: never
+      collector_tier: "pemula" | "amatir" | "advance" | "pro"
+      trial_status: "pending" | "approved" | "rejected" | "expired"
+      user_role: "customer" | "collector" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +311,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      collector_tier: ["pemula", "amatir", "advance", "pro"],
+      trial_status: ["pending", "approved", "rejected", "expired"],
+      user_role: ["customer", "collector", "admin"],
+    },
   },
 } as const

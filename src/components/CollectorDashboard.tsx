@@ -1,17 +1,62 @@
 
-import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MapPin, Bell, Calendar, User, Star } from "lucide-react";
 
-interface CollectorDashboardProps {
-  onLogout: () => void;
+interface CollectorProfile {
+  current_tier: string;
+  trial_status: string;
+  trial_expires_at: string | null;
+  is_verified: boolean;
 }
 
-export const CollectorDashboard = ({ onLogout }: CollectorDashboardProps) => {
-  const [currentTier] = useState("PRO - TRIAL");
+export const CollectorDashboard = () => {
+  const { signOut, profile, user } = useAuth();
+  const [collectorProfile, setCollectorProfile] = useState<CollectorProfile | null>(null);
+
+  useEffect(() => {
+    if (user && profile?.role === 'collector') {
+      fetchCollectorProfile();
+    }
+  }, [user, profile]);
+
+  const fetchCollectorProfile = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('collector_profiles')
+        .select('current_tier, trial_status, trial_expires_at, is_verified')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching collector profile:', error);
+        return;
+      }
+
+      setCollectorProfile(data);
+    } catch (error) {
+      console.error('Error in fetchCollectorProfile:', error);
+    }
+  };
+
+  const getCurrentTier = () => {
+    if (!collectorProfile) return 'PEMULA';
+    
+    if (collectorProfile.trial_status === 'approved' && 
+        collectorProfile.trial_expires_at && 
+        new Date(collectorProfile.trial_expires_at) > new Date()) {
+      return 'PRO - TRIAL';
+    }
+    
+    return collectorProfile.current_tier.toUpperCase();
+  };
 
   const availableItems = [
     {
@@ -74,16 +119,23 @@ export const CollectorDashboard = ({ onLogout }: CollectorDashboardProps) => {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-emerald-800">Dashboard Pengepul</h1>
-                <Badge className="bg-emerald-100 text-emerald-800 text-xs">
-                  {currentTier}
-                </Badge>
+                <div className="flex items-center space-x-2">
+                  <Badge className="bg-emerald-100 text-emerald-800 text-xs">
+                    {getCurrentTier()}
+                  </Badge>
+                  {collectorProfile && !collectorProfile.is_verified && (
+                    <Badge variant="outline" className="text-xs border-orange-300 text-orange-700">
+                      Menunggu Verifikasi
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <Button variant="outline" className="border-emerald-300 text-emerald-700">
                 Upgrade Tier
               </Button>
-              <Button variant="outline" onClick={onLogout}>
+              <Button variant="outline" onClick={signOut}>
                 Keluar
               </Button>
             </div>
@@ -232,11 +284,13 @@ export const CollectorDashboard = ({ onLogout }: CollectorDashboardProps) => {
               <CardContent>
                 <div className="text-center">
                   <Badge className="bg-emerald-100 text-emerald-800 mb-2">
-                    PRO - TRIAL
+                    {getCurrentTier()}
                   </Badge>
-                  <p className="text-sm text-emerald-600 mb-4">
-                    Trial berakhir dalam 45 hari
-                  </p>
+                  {collectorProfile?.trial_status === 'approved' && collectorProfile.trial_expires_at && (
+                    <p className="text-sm text-emerald-600 mb-4">
+                      Trial berakhir: {new Date(collectorProfile.trial_expires_at).toLocaleDateString('id-ID')}
+                    </p>
+                  )}
                   <Button 
                     size="sm" 
                     className="w-full bg-emerald-600 hover:bg-emerald-700"

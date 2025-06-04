@@ -1,38 +1,38 @@
 
-import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ArrowDown, User, Search, Calendar, Bell } from "lucide-react";
 import { PricingTable } from "@/components/PricingTable";
-import { LoginModal } from "@/components/LoginModal";
-import { RegisterModal } from "@/components/RegisterModal";
 import { CustomerDashboard } from "@/components/CustomerDashboard";
 import { CollectorDashboard } from "@/components/CollectorDashboard";
+import { AdminDashboard } from "@/components/AdminDashboard";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
-  const [showLogin, setShowLogin] = useState(false);
-  const [showRegister, setShowRegister] = useState(false);
-  const [userType, setUserType] = useState<'customer' | 'collector' | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user, profile, loading } = useAuth();
+  const navigate = useNavigate();
 
-  const handleLogin = (type: 'customer' | 'collector') => {
-    setUserType(type);
-    setIsLoggedIn(true);
-    setShowLogin(false);
-  };
-
-  const handleLogout = () => {
-    setUserType(null);
-    setIsLoggedIn(false);
-  };
-
-  if (isLoggedIn && userType) {
-    return userType === 'customer' ? 
-      <CustomerDashboard onLogout={handleLogout} /> : 
-      <CollectorDashboard onLogout={handleLogout} />;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100 flex items-center justify-center">
+        <div className="text-emerald-600">Memuat...</div>
+      </div>
+    );
   }
 
+  // Show appropriate dashboard based on user role
+  if (user && profile?.is_profile_complete) {
+    if (profile.role === 'customer') {
+      return <CustomerDashboard />;
+    } else if (profile.role === 'collector') {
+      return <CollectorDashboard />;
+    } else if (profile.role === 'admin') {
+      return <AdminDashboard />;
+    }
+  }
+
+  // Show landing page for non-authenticated users
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100">
       {/* Header */}
@@ -51,13 +51,13 @@ const Index = () => {
             <div className="flex space-x-3">
               <Button 
                 variant="outline" 
-                onClick={() => setShowLogin(true)}
+                onClick={() => navigate('/auth')}
                 className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
               >
                 Masuk
               </Button>
               <Button 
-                onClick={() => setShowRegister(true)}
+                onClick={() => navigate('/auth')}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
                 Daftar
@@ -81,7 +81,7 @@ const Index = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
-              onClick={() => setShowRegister(true)}
+              onClick={() => navigate('/auth')}
               className="bg-emerald-600 hover:bg-emerald-700 text-lg px-8 py-3"
             >
               Mulai Jual Barang Bekas
@@ -89,7 +89,7 @@ const Index = () => {
             <Button 
               size="lg" 
               variant="outline"
-              onClick={() => setShowRegister(true)}
+              onClick={() => navigate('/auth')}
               className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 text-lg px-8 py-3"
             >
               Daftar Sebagai Pengepul
@@ -227,17 +227,6 @@ const Index = () => {
           </p>
         </div>
       </footer>
-
-      {/* Modals */}
-      <LoginModal 
-        isOpen={showLogin} 
-        onClose={() => setShowLogin(false)}
-        onLogin={handleLogin}
-      />
-      <RegisterModal 
-        isOpen={showRegister} 
-        onClose={() => setShowRegister(false)}
-      />
     </div>
   );
 };

@@ -1,4 +1,5 @@
 
+import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,11 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Bell, Calendar, User } from "lucide-react";
 import { SellItemModal } from "@/components/SellItemModal";
 
-interface CustomerDashboardProps {
-  onLogout: () => void;
-}
-
-export const CustomerDashboard = ({ onLogout }: CustomerDashboardProps) => {
+export const CustomerDashboard = () => {
+  const { signOut, profile } = useAuth();
   const [showSellModal, setShowSellModal] = useState(false);
 
   const notifications = [
@@ -57,6 +55,7 @@ export const CustomerDashboard = ({ onLogout }: CustomerDashboardProps) => {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-emerald-800">Dashboard Pelanggan</h1>
+                <p className="text-xs text-emerald-600">Selamat datang, {profile?.name || 'Pelanggan'}</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -67,7 +66,7 @@ export const CustomerDashboard = ({ onLogout }: CustomerDashboardProps) => {
                 <Plus className="w-4 h-4 mr-2" />
                 Jual Barang
               </Button>
-              <Button variant="outline" onClick={onLogout}>
+              <Button variant="outline" onClick={signOut}>
                 Keluar
               </Button>
             </div>
@@ -173,7 +172,7 @@ export const CustomerDashboard = ({ onLogout }: CustomerDashboardProps) => {
                   <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <User className="w-8 h-8 text-emerald-600" />
                   </div>
-                  <h3 className="font-semibold text-emerald-800">Ahmad Pelanggan</h3>
+                  <h3 className="font-semibold text-emerald-800">{profile?.name || 'Pelanggan'}</h3>
                   <p className="text-sm text-emerald-600">Member sejak Jan 2024</p>
                   <Badge className="mt-2 bg-emerald-100 text-emerald-800">
                     Eco Warrior
