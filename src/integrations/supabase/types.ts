@@ -38,6 +38,48 @@ export type Database = {
           },
         ]
       }
+      collector_interests: {
+        Row: {
+          collector_id: string
+          contacted_at: string | null
+          created_at: string | null
+          id: string
+          is_contacted: boolean | null
+          waste_item_id: string
+        }
+        Insert: {
+          collector_id: string
+          contacted_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_contacted?: boolean | null
+          waste_item_id: string
+        }
+        Update: {
+          collector_id?: string
+          contacted_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_contacted?: boolean | null
+          waste_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collector_interests_collector_id_fkey"
+            columns: ["collector_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collector_interests_waste_item_id_fkey"
+            columns: ["waste_item_id"]
+            isOneToOne: false
+            referencedRelation: "waste_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collector_profiles: {
         Row: {
           business_address: string | null
@@ -141,6 +183,108 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string | null
+          data: Json | null
+          id: string
+          is_read: boolean | null
+          message: string
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pickup_requests: {
+        Row: {
+          collector_id: string
+          created_at: string | null
+          customer_id: string
+          id: string
+          notes: string | null
+          scheduled_date: string
+          scheduled_time: string
+          status: string | null
+          updated_at: string | null
+          waste_item_id: string
+        }
+        Insert: {
+          collector_id: string
+          created_at?: string | null
+          customer_id: string
+          id?: string
+          notes?: string | null
+          scheduled_date: string
+          scheduled_time: string
+          status?: string | null
+          updated_at?: string | null
+          waste_item_id: string
+        }
+        Update: {
+          collector_id?: string
+          created_at?: string | null
+          customer_id?: string
+          id?: string
+          notes?: string | null
+          scheduled_date?: string
+          scheduled_time?: string
+          status?: string | null
+          updated_at?: string | null
+          waste_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pickup_requests_collector_id_fkey"
+            columns: ["collector_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pickup_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pickup_requests_waste_item_id_fkey"
+            columns: ["waste_item_id"]
+            isOneToOne: false
+            referencedRelation: "waste_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           address: string | null
@@ -183,11 +327,86 @@ export type Database = {
         }
         Relationships: []
       }
+      waste_items: {
+        Row: {
+          created_at: string | null
+          customer_id: string
+          description: string | null
+          id: string
+          location_address: string
+          location_coordinates: unknown
+          photos: string[] | null
+          status: Database["public"]["Enums"]["waste_item_status"] | null
+          updated_at: string | null
+          waste_type: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id: string
+          description?: string | null
+          id?: string
+          location_address: string
+          location_coordinates: unknown
+          photos?: string[] | null
+          status?: Database["public"]["Enums"]["waste_item_status"] | null
+          updated_at?: string | null
+          waste_type: string
+          weight: number
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string
+          description?: string | null
+          id?: string
+          location_address?: string
+          location_coordinates?: unknown
+          photos?: string[] | null
+          status?: Database["public"]["Enums"]["waste_item_status"] | null
+          updated_at?: string | null
+          waste_type?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waste_items_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      calculate_distance: {
+        Args: { lat1: number; lon1: number; lat2: number; lon2: number }
+        Returns: number
+      }
+      create_notification: {
+        Args: {
+          user_id: string
+          notification_type: Database["public"]["Enums"]["notification_type"]
+          title: string
+          message: string
+          data?: Json
+        }
+        Returns: string
+      }
+      find_matching_collectors: {
+        Args: { item_id: string }
+        Returns: {
+          collector_id: string
+          distance: number
+        }[]
+      }
+      get_tier_limits: {
+        Args: { tier: Database["public"]["Enums"]["collector_tier"] }
+        Returns: Json
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
@@ -195,8 +414,19 @@ export type Database = {
     }
     Enums: {
       collector_tier: "pemula" | "amatir" | "advance" | "pro"
+      notification_type:
+        | "new_listing"
+        | "collector_interest"
+        | "pickup_scheduled"
+        | "pickup_reminder"
+        | "transaction_complete"
+        | "tier_expiring"
+        | "trial_approved"
+        | "trial_rejected"
+        | "general"
       trial_status: "pending" | "approved" | "rejected" | "expired"
       user_role: "customer" | "collector" | "admin"
+      waste_item_status: "available" | "reserved" | "sold" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -313,8 +543,20 @@ export const Constants = {
   public: {
     Enums: {
       collector_tier: ["pemula", "amatir", "advance", "pro"],
+      notification_type: [
+        "new_listing",
+        "collector_interest",
+        "pickup_scheduled",
+        "pickup_reminder",
+        "transaction_complete",
+        "tier_expiring",
+        "trial_approved",
+        "trial_rejected",
+        "general",
+      ],
       trial_status: ["pending", "approved", "rejected", "expired"],
       user_role: ["customer", "collector", "admin"],
+      waste_item_status: ["available", "reserved", "sold", "cancelled"],
     },
   },
 } as const

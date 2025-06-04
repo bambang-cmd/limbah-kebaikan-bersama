@@ -1,46 +1,24 @@
 
-import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Bell, Calendar, User } from "lucide-react";
-import { SellItemModal } from "@/components/SellItemModal";
+import { Plus, Package, Bell, BarChart3, Share2 } from "lucide-react";
+import { SellItemModal } from './SellItemModal';
+import { WasteItemsList } from './WasteItemsList';
+import { NotificationDropdown } from './NotificationDropdown';
 
 export const CustomerDashboard = () => {
-  const { signOut, profile } = useAuth();
-  const [showSellModal, setShowSellModal] = useState(false);
+  const { profile, signOut } = useAuth();
+  const [isSellModalOpen, setIsSellModalOpen] = useState(false);
 
-  const notifications = [
-    {
-      id: 1,
-      message: "3 pengepul tertarik dengan barang plastik Anda",
-      time: "2 menit yang lalu",
-      type: "new"
-    },
-    {
-      id: 2,
-      message: "Pengambilan kardus dijadwalkan besok pagi",
-      time: "1 jam yang lalu",
-      type: "schedule"
-    }
-  ];
-
-  const activeListings = [
-    {
-      id: 1,
-      type: "Plastik",
-      weight: "5 kg",
-      status: "Menunggu pengepul",
-      interested: 3
-    },
-    {
-      id: 2,
-      type: "Kardus",
-      weight: "15 kg",
-      status: "Dijadwalkan",
-      date: "Besok, 09:00"
-    }
+  const stats = [
+    { title: "Total Posting", value: "12", icon: Package, color: "text-blue-600" },
+    { title: "Terjual", value: "8", icon: BarChart3, color: "text-green-600" },
+    { title: "Penghasilan", value: "Rp 250K", icon: Share2, color: "text-purple-600" },
+    { title: "Dampak Lingkungan", value: "45kg CO₂", icon: Bell, color: "text-orange-600" }
   ];
 
   return (
@@ -54,13 +32,18 @@ export const CustomerDashboard = () => {
                 <span className="text-white font-bold text-lg">B</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-emerald-800">Dashboard Pelanggan</h1>
-                <p className="text-xs text-emerald-600">Selamat datang, {profile?.name || 'Pelanggan'}</p>
+                <h1 className="text-xl font-bold text-emerald-800">
+                  Halo, {profile?.name || 'Pelanggan'}!
+                </h1>
+                <Badge className="bg-blue-100 text-blue-800 text-xs">
+                  Pelanggan
+                </Badge>
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <NotificationDropdown />
               <Button
-                onClick={() => setShowSellModal(true)}
+                onClick={() => setIsSellModalOpen(true)}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -75,118 +58,102 @@ export const CustomerDashboard = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* Main Content */}
-          <div className="md:col-span-2 space-y-6">
-            {/* Quick Stats */}
-            <div className="grid grid-cols-3 gap-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm text-emerald-600">Total Terjual</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-emerald-800">47 kg</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm text-emerald-600">Pendapatan</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-emerald-800">Rp 235K</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm text-emerald-600">CO2 Diselamatkan</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-emerald-800">94 kg</div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Active Listings */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-emerald-800">Barang Aktif Dijual</CardTitle>
-                <CardDescription>Daftar barang bekas yang sedang ditawarkan</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {activeListings.map((item) => (
-                  <div key={item.id} className="flex justify-between items-center p-4 border border-emerald-200 rounded-lg">
-                    <div>
-                      <h3 className="font-semibold text-emerald-800">{item.type}</h3>
-                      <p className="text-sm text-emerald-600">{item.weight}</p>
-                    </div>
-                    <div className="text-right">
-                      <Badge 
-                        variant={item.status === "Dijadwalkan" ? "default" : "secondary"}
-                        className={item.status === "Dijadwalkan" ? "bg-emerald-100 text-emerald-800" : ""}
-                      >
-                        {item.status}
-                      </Badge>
-                      {item.interested && (
-                        <p className="text-xs text-emerald-600 mt-1">{item.interested} pengepul tertarik</p>
-                      )}
-                      {item.date && (
-                        <p className="text-xs text-emerald-600 mt-1">{item.date}</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Notifications */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-emerald-800 flex items-center">
-                  <Bell className="w-4 h-4 mr-2" />
-                  Notifikasi
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {stats.map((stat, index) => (
+            <Card key={index}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-emerald-600">
+                  {stat.title}
                 </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {notifications.map((notif) => (
-                  <div key={notif.id} className="p-3 border border-emerald-200 rounded-lg">
-                    <p className="text-sm text-emerald-700">{notif.message}</p>
-                    <p className="text-xs text-emerald-500 mt-1">{notif.time}</p>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            {/* Profile Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-emerald-800 flex items-center">
-                  <User className="w-4 h-4 mr-2" />
-                  Profil
-                </CardTitle>
+                <stat.icon className={`h-4 w-4 ${stat.color}`} />
               </CardHeader>
               <CardContent>
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <User className="w-8 h-8 text-emerald-600" />
+                <div className="text-2xl font-bold text-emerald-800">{stat.value}</div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Main Content */}
+        <Tabs defaultValue="items" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="items">Barang Saya</TabsTrigger>
+            <TabsTrigger value="transactions">Transaksi</TabsTrigger>
+            <TabsTrigger value="statistics">Statistik</TabsTrigger>
+            <TabsTrigger value="achievements">Pencapaian</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="items" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-emerald-800">Daftar Barang Bekas</CardTitle>
+                    <CardDescription>Kelola barang bekas yang Anda posting</CardDescription>
                   </div>
-                  <h3 className="font-semibold text-emerald-800">{profile?.name || 'Pelanggan'}</h3>
-                  <p className="text-sm text-emerald-600">Member sejak Jan 2024</p>
-                  <Badge className="mt-2 bg-emerald-100 text-emerald-800">
-                    Eco Warrior
-                  </Badge>
+                  <Button 
+                    onClick={() => setIsSellModalOpen(true)}
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Tambah Barang
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <WasteItemsList />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="transactions" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-emerald-800">Riwayat Transaksi</CardTitle>
+                <CardDescription>Daftar transaksi penjualan barang bekas</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-gray-500">
+                  Fitur transaksi akan segera hadir
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
+          </TabsContent>
+
+          <TabsContent value="statistics" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-emerald-800">Statistik Penjualan</CardTitle>
+                <CardDescription>Analisis performa penjualan Anda</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-gray-500">
+                  Fitur statistik akan segera hadir
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="achievements" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-emerald-800">Pencapaian Lingkungan</CardTitle>
+                <CardDescription>Dampak positif Anda terhadap lingkungan</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-gray-500">
+                  Fitur pencapaian akan segera hadir
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       <SellItemModal 
-        isOpen={showSellModal}
-        onClose={() => setShowSellModal(false)}
+        isOpen={isSellModalOpen} 
+        onClose={() => setIsSellModalOpen(false)} 
       />
     </div>
   );

@@ -1,110 +1,52 @@
 
 import { useAuth } from '@/hooks/useAuth';
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Bell, Calendar, User, Star } from "lucide-react";
-
-interface CollectorProfile {
-  current_tier: string;
-  trial_status: string;
-  trial_expires_at: string | null;
-  is_verified: boolean;
-}
+import { Badge } from "@/components/ui/badge";
+import { Users, Package, MapPin, BarChart3, Clock, CheckCircle } from "lucide-react";
+import { NotificationDropdown } from './NotificationDropdown';
 
 export const CollectorDashboard = () => {
-  const { signOut, profile, user } = useAuth();
-  const [collectorProfile, setCollectorProfile] = useState<CollectorProfile | null>(null);
+  const { profile, signOut } = useAuth();
 
-  useEffect(() => {
-    if (user && profile?.role === 'collector') {
-      fetchCollectorProfile();
-    }
-  }, [user, profile]);
+  // Get collector profile from database (would need separate hook)
+  const collectorProfile = {
+    business_name: "CV Maju Jaya",
+    current_tier: "pemula",
+    trial_status: "pending",
+    trial_expires_at: "2024-04-15",
+    is_verified: false
+  };
 
-  const fetchCollectorProfile = async () => {
-    if (!user) return;
+  const getTierBadge = (tier: string) => {
+    const tierColors = {
+      pemula: "bg-gray-100 text-gray-800",
+      amatir: "bg-blue-100 text-blue-800", 
+      advance: "bg-purple-100 text-purple-800",
+      pro: "bg-gold-100 text-gold-800"
+    };
+    return tierColors[tier as keyof typeof tierColors] || "bg-gray-100 text-gray-800";
+  };
 
-    try {
-      const { data, error } = await supabase
-        .from('collector_profiles')
-        .select('current_tier, trial_status, trial_expires_at, is_verified')
-        .eq('id', user.id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching collector profile:', error);
-        return;
-      }
-
-      setCollectorProfile(data);
-    } catch (error) {
-      console.error('Error in fetchCollectorProfile:', error);
+  const getTrialStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return "bg-yellow-100 text-yellow-800";
+      case 'approved':
+        return "bg-green-100 text-green-800";
+      case 'rejected':
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
-  const getCurrentTier = () => {
-    if (!collectorProfile) return 'PEMULA';
-    
-    if (collectorProfile.trial_status === 'approved' && 
-        collectorProfile.trial_expires_at && 
-        new Date(collectorProfile.trial_expires_at) > new Date()) {
-      return 'PRO - TRIAL';
-    }
-    
-    return collectorProfile.current_tier.toUpperCase();
-  };
-
-  const availableItems = [
-    {
-      id: 1,
-      type: "Plastik",
-      weight: "5 kg",
-      distance: "1.2 km",
-      price: "Rp 15.000",
-      customer: "Ahmad S.",
-      location: "Jl. Merdeka No. 12"
-    },
-    {
-      id: 2,
-      type: "Kardus",
-      weight: "15 kg",
-      distance: "0.8 km",
-      price: "Rp 45.000",
-      customer: "Sari M.",
-      location: "Jl. Mawar No. 5"
-    },
-    {
-      id: 3,
-      type: "Besi",
-      weight: "25 kg",
-      distance: "3.1 km",
-      price: "Rp 125.000",
-      customer: "Budi T.",
-      location: "Jl. Kenanga No. 8"
-    }
-  ];
-
-  const scheduledPickups = [
-    {
-      id: 1,
-      customer: "Ahmad S.",
-      items: "Plastik 5kg",
-      time: "09:00",
-      location: "Jl. Merdeka No. 12",
-      status: "confirmed"
-    },
-    {
-      id: 2,
-      customer: "Dewi L.",
-      items: "Kardus 10kg",
-      time: "14:00",
-      location: "Jl. Anggrek No. 15",
-      status: "pending"
-    }
+  const stats = [
+    { title: "Barang Tersedia", value: "24", icon: Package, color: "text-blue-600" },
+    { title: "Transaksi Bulan Ini", value: "15", icon: BarChart3, color: "text-green-600" },
+    { title: "Jadwal Hari Ini", value: "3", icon: Clock, color: "text-purple-600" },
+    { title: "Rating", value: "4.8/5", icon: CheckCircle, color: "text-orange-600" }
   ];
 
   return (
@@ -118,23 +60,28 @@ export const CollectorDashboard = () => {
                 <span className="text-white font-bold text-lg">B</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-emerald-800">Dashboard Pengepul</h1>
+                <h1 className="text-xl font-bold text-emerald-800">
+                  {collectorProfile.business_name}
+                </h1>
                 <div className="flex items-center space-x-2">
-                  <Badge className="bg-emerald-100 text-emerald-800 text-xs">
-                    {getCurrentTier()}
+                  <Badge className={getTierBadge(collectorProfile.current_tier)}>
+                    Tier {collectorProfile.current_tier.toUpperCase()}
                   </Badge>
-                  {collectorProfile && !collectorProfile.is_verified && (
-                    <Badge variant="outline" className="text-xs border-orange-300 text-orange-700">
-                      Menunggu Verifikasi
+                  {collectorProfile.trial_status === 'pending' && (
+                    <Badge className={getTrialStatusBadge(collectorProfile.trial_status)}>
+                      Trial Pending
+                    </Badge>
+                  )}
+                  {!collectorProfile.is_verified && (
+                    <Badge variant="outline" className="border-yellow-300 text-yellow-700">
+                      Belum Terverifikasi
                     </Badge>
                   )}
                 </div>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="outline" className="border-emerald-300 text-emerald-700">
-                Upgrade Tier
-              </Button>
+              <NotificationDropdown />
               <Button variant="outline" onClick={signOut}>
                 Keluar
               </Button>
@@ -144,185 +91,142 @@ export const CollectorDashboard = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* Main Content */}
-          <div className="md:col-span-2">
-            <Tabs defaultValue="map" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="map">Peta Interaktif</TabsTrigger>
-                <TabsTrigger value="available">Barang Tersedia</TabsTrigger>
-                <TabsTrigger value="schedule">Jadwal</TabsTrigger>
-              </TabsList>
+        {/* Trial Info */}
+        {collectorProfile.trial_status === 'pending' && (
+          <Card className="mb-6 border-yellow-200 bg-yellow-50">
+            <CardHeader>
+              <CardTitle className="text-yellow-800 flex items-center">
+                <Clock className="w-5 h-5 mr-2" />
+                Permohonan Trial PRO Sedang Diproses
+              </CardTitle>
+              <CardDescription className="text-yellow-700">
+                Kami sedang meninjau permohonan trial Tier PRO Anda. Proses verifikasi memakan waktu maksimal 24 jam.
+                Setelah disetujui, Anda akan mendapat akses penuh ke fitur Tier PRO selama 3 bulan.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        )}
 
-              <TabsContent value="map">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-emerald-800">Peta Barang Bekas</CardTitle>
-                    <CardDescription>Lokasi barang bekas yang tersedia dalam radius Anda</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-96 bg-emerald-50 border-2 border-dashed border-emerald-300 rounded-lg flex items-center justify-center">
-                      <div className="text-center text-emerald-600">
-                        <MapPin className="w-12 h-12 mx-auto mb-4" />
-                        <p className="font-semibold">Peta Interaktif</p>
-                        <p className="text-sm">Menampilkan lokasi barang bekas tersedia</p>
-                        <div className="flex justify-center space-x-4 mt-4">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                            <span className="text-xs">Plastik</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                            <span className="text-xs">Kardus</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                            <span className="text-xs">Besi</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="available">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-emerald-800">Barang Tersedia</CardTitle>
-                    <CardDescription>Daftar barang bekas yang bisa Anda beli</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {availableItems.map((item) => (
-                      <div key={item.id} className="p-4 border border-emerald-200 rounded-lg hover:shadow-md transition-shadow">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-semibold text-emerald-800">{item.type}</h3>
-                            <p className="text-sm text-emerald-600">{item.weight} • {item.distance}</p>
-                            <p className="text-xs text-emerald-500">{item.customer} • {item.location}</p>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-lg font-bold text-emerald-800">{item.price}</div>
-                            <Button size="sm" className="mt-2 bg-emerald-600 hover:bg-emerald-700">
-                              Hubungi
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="schedule">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-emerald-800">Jadwal Pengambilan</CardTitle>
-                    <CardDescription>Jadwal pengambilan barang hari ini</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {scheduledPickups.map((pickup) => (
-                      <div key={pickup.id} className="p-4 border border-emerald-200 rounded-lg">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-semibold text-emerald-800">{pickup.customer}</h3>
-                            <p className="text-sm text-emerald-600">{pickup.items}</p>
-                            <p className="text-xs text-emerald-500">{pickup.location}</p>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-lg font-bold text-emerald-800">{pickup.time}</div>
-                            <Badge 
-                              variant={pickup.status === "confirmed" ? "default" : "secondary"}
-                              className={pickup.status === "confirmed" ? "bg-emerald-100 text-emerald-800" : ""}
-                            >
-                              {pickup.status === "confirmed" ? "Dikonfirmasi" : "Menunggu"}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-emerald-800">Statistik Bulan Ini</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-emerald-600">Total Beli</span>
-                  <span className="font-bold text-emerald-800">342 kg</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-emerald-600">Pengeluaran</span>
-                  <span className="font-bold text-emerald-800">Rp 1.2M</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-emerald-600">Transaksi</span>
-                  <span className="font-bold text-emerald-800">28</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-emerald-600">Rating</span>
-                  <span className="font-bold text-emerald-800 flex items-center">
-                    4.8 <Star className="w-4 h-4 text-yellow-500 ml-1" />
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Tier Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-emerald-800">Tier Langganan</CardTitle>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {stats.map((stat, index) => (
+            <Card key={index}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-emerald-600">
+                  {stat.title}
+                </CardTitle>
+                <stat.icon className={`h-4 w-4 ${stat.color}`} />
               </CardHeader>
               <CardContent>
-                <div className="text-center">
-                  <Badge className="bg-emerald-100 text-emerald-800 mb-2">
-                    {getCurrentTier()}
-                  </Badge>
-                  {collectorProfile?.trial_status === 'approved' && collectorProfile.trial_expires_at && (
-                    <p className="text-sm text-emerald-600 mb-4">
-                      Trial berakhir: {new Date(collectorProfile.trial_expires_at).toLocaleDateString('id-ID')}
+                <div className="text-2xl font-bold text-emerald-800">{stat.value}</div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Main Content */}
+        <Tabs defaultValue="map" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="map">Peta Interaktif</TabsTrigger>
+            <TabsTrigger value="schedule">Jadwal</TabsTrigger>
+            <TabsTrigger value="transactions">Transaksi</TabsTrigger>
+            <TabsTrigger value="statistics">Statistik</TabsTrigger>
+            <TabsTrigger value="subscription">Langganan</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="map" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-emerald-800">Peta Barang Bekas Tersedia</CardTitle>
+                <CardDescription>Lihat lokasi barang bekas yang tersedia sesuai tier Anda</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-96 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-600">
+                  <div className="text-center">
+                    <MapPin className="w-12 h-12 mx-auto mb-4" />
+                    <p>Peta interaktif akan segera hadir</p>
+                    <p className="text-sm text-emerald-500 mt-2">
+                      Fitur ini akan menampilkan lokasi barang bekas sesuai dengan tier langganan Anda
                     </p>
-                  )}
-                  <Button 
-                    size="sm" 
-                    className="w-full bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    Beli Langganan
-                  </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Quick Actions */}
+          <TabsContent value="schedule" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-emerald-800">Aksi Cepat</CardTitle>
+                <CardTitle className="text-emerald-800">Jadwal Pengambilan</CardTitle>
+                <CardDescription>Kelola jadwal pengambilan barang bekas</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full justify-start border-emerald-200">
-                  <Bell className="w-4 h-4 mr-2" />
-                  Atur Notifikasi
-                </Button>
-                <Button variant="outline" className="w-full justify-start border-emerald-200">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Lihat Riwayat
-                </Button>
-                <Button variant="outline" className="w-full justify-start border-emerald-200">
-                  <User className="w-4 h-4 mr-2" />
-                  Edit Profil
-                </Button>
+              <CardContent>
+                <div className="text-center py-8 text-gray-500">
+                  Belum ada jadwal pengambilan
+                </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
+          </TabsContent>
+
+          <TabsContent value="transactions" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-emerald-800">Riwayat Transaksi</CardTitle>
+                <CardDescription>Daftar transaksi pembelian barang bekas</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-gray-500">
+                  Fitur transaksi akan segera hadir
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="statistics" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-emerald-800">Statistik Bisnis</CardTitle>
+                <CardDescription>Analisis performa bisnis pengepul</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-gray-500">
+                  Fitur statistik akan segera hadir
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="subscription" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-emerald-800">Status Langganan</CardTitle>
+                <CardDescription>Kelola tier dan langganan Anda</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 border border-emerald-200 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-emerald-800">Tier Saat Ini</h3>
+                    <Badge className={getTierBadge(collectorProfile.current_tier)}>
+                      {collectorProfile.current_tier.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-emerald-600">
+                    Anda menggunakan tier {collectorProfile.current_tier} dengan batasan akses sesuai tier tersebut.
+                  </p>
+                </div>
+
+                {collectorProfile.trial_status === 'pending' && (
+                  <div className="p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
+                    <h3 className="font-semibold text-yellow-800 mb-2">Trial PRO (Pending)</h3>
+                    <p className="text-sm text-yellow-700">
+                      Permohonan trial PRO sedang diproses. Jika disetujui, Anda akan mendapat akses ke semua fitur tier PRO selama 3 bulan.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

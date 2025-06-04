@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { MapPin } from "lucide-react";
+import { useWasteItems } from '@/hooks/useWasteItems';
 
 interface SellItemModalProps {
   isOpen: boolean;
@@ -21,25 +22,48 @@ const wasteTypes = [
 ];
 
 export const SellItemModal = ({ isOpen, onClose }: SellItemModalProps) => {
+  const { createWasteItem } = useWasteItems();
   const [formData, setFormData] = useState({
     type: '',
     weight: '',
     description: '',
     location: '',
+    coordinates: [] as number[],
     photos: []
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = () => {
-    console.log('Selling item:', formData);
-    // Reset form
-    setFormData({
-      type: '',
-      weight: '',
-      description: '',
-      location: '',
-      photos: []
-    });
-    onClose();
+  const handleSubmit = async () => {
+    if (!formData.type || !formData.weight || !formData.location) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await createWasteItem({
+        waste_type: formData.type,
+        weight: parseFloat(formData.weight),
+        description: formData.description,
+        location_address: formData.location,
+        location_coordinates: formData.coordinates.length === 2 ? formData.coordinates : [-6.2088, 106.8456], // Default Jakarta coordinates
+        photos: formData.photos
+      });
+
+      // Reset form
+      setFormData({
+        type: '',
+        weight: '',
+        description: '',
+        location: '',
+        coordinates: [],
+        photos: []
+      });
+      onClose();
+    } catch (error) {
+      console.error('Error submitting waste item:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getCurrentLocation = () => {
@@ -49,7 +73,8 @@ export const SellItemModal = ({ isOpen, onClose }: SellItemModalProps) => {
           const { latitude, longitude } = position.coords;
           setFormData(prev => ({ 
             ...prev, 
-            location: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}` 
+            location: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+            coordinates: [latitude, longitude]
           }));
         },
         (error) => {
@@ -159,15 +184,16 @@ export const SellItemModal = ({ isOpen, onClose }: SellItemModalProps) => {
               variant="outline" 
               onClick={onClose}
               className="flex-1"
+              disabled={isSubmitting}
             >
               Batal
             </Button>
             <Button 
               onClick={handleSubmit}
               className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-              disabled={!formData.type || !formData.weight || !formData.location}
+              disabled={!formData.type || !formData.weight || !formData.location || isSubmitting}
             >
-              Posting Barang
+              {isSubmitting ? 'Memposting...' : 'Posting Barang'}
             </Button>
           </div>
         </div>
